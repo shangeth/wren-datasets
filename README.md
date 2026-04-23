@@ -90,6 +90,19 @@ Common flags:
     └── librispeech.md   Uploaded as README.md to the LibriSpeech dataset repo
 ```
 
+## Citation
+
+```bibtex
+@misc{wren2026,
+  title  = {Wren: A Family of Small Open-Weight Models for Unified Speech-Text Modelling},
+  author = {Shangeth Rajaa},
+  year   = {2026},
+  url    = {https://github.com/shangeth/wren}
+}
+```
+
+Please also cite the upstream corpora (LJSpeech, LibriSpeech) per their respective licenses.
+
 ## Related
 
 - [wren-tts](https://github.com/shangeth/wren-tts) — TTS model trained on these datasets.
