@@ -5,18 +5,24 @@ tokens from public speech corpora and publishing them as HuggingFace datasets.
 
 The published datasets underpin the [Wren](https://github.com/shangeth/wren-tts)
 series of small speech LLMs — but are useful to anyone training Mimi-based speech
-models who doesn't want to burn an hour of GPU re-extracting codes.
+models who doesn't want to burn GPU hours re-extracting codes.
 
 ## Published datasets
 
-| Dataset | Source | Rows | License |
-|---|---|---|---|
-| [shangeth/ljspeech-mimi-codes](https://huggingface.co/datasets/shangeth/ljspeech-mimi-codes) | LJSpeech (single speaker, 24 h) | ~13k | CC0 |
-| [shangeth/librispeech-mimi-codes](https://huggingface.co/datasets/shangeth/librispeech-mimi-codes) | LibriSpeech standard splits | ~280k | CC-BY-4.0 |
+| Dataset | Source | Rows | Splits | License |
+|---|---|---|---|---|
+| [shangeth/ljspeech-mimi-codes](https://huggingface.co/datasets/shangeth/ljspeech-mimi-codes) | LJSpeech | ~13k | `train` | CC0 |
+| [shangeth/librispeech-mimi-codes](https://huggingface.co/datasets/shangeth/librispeech-mimi-codes) | LibriSpeech | ~280k | 7 splits | CC-BY-4.0 |
+| [shangeth/libritts-r-mimi-codes](https://huggingface.co/datasets/shangeth/libritts-r-mimi-codes) | LibriTTS-R | ~360k | 7 splits | CC-BY-4.0 |
+| [shangeth/hifi-tts-mimi-codes](https://huggingface.co/datasets/shangeth/hifi-tts-mimi-codes) | HiFi-TTS | ~290k | 6 splits | CC-BY-4.0 |
+| [shangeth/vctk-mimi-codes](https://huggingface.co/datasets/shangeth/vctk-mimi-codes) | VCTK | ~44k | `train` | CC-BY-4.0 |
+| [shangeth/jenny-mimi-codes](https://huggingface.co/datasets/shangeth/jenny-mimi-codes) | Jenny TTS | ~21k | `train` | Apache-2.0 |
 
-Each row: `id`, `text`, `codes` (`int16[k=8][n_frames]` @ 12.5 fps), `n_frames`, `k_codebooks`, and `speaker_id` (LibriSpeech only). Codes are the full 8 codebooks — users slice `codes[:k]` for fewer.
+Each row: `id`, `text`, `codes` (`int16[k=8][n_frames]` @ 12.5 fps), `n_frames`,
+`k_codebooks`. Speaker datasets also include `speaker_id`. VCTK also includes `accent`.
+Codes are all 8 codebooks — slice `codes[:k]` for fewer.
 
-## Using the published datasets
+## Quick start (loading)
 
 ```python
 from datasets import load_dataset
@@ -24,7 +30,7 @@ import torch
 
 ds    = load_dataset("shangeth/librispeech-mimi-codes", split="train_clean_100")
 ex    = ds[0]
-codes = torch.tensor(ex["codes"], dtype=torch.long)       # [8, n_frames]
+codes = torch.tensor(ex["codes"], dtype=torch.long)   # [8, n_frames]
 print(ex["id"], "→", ex["text"][:60])
 
 # Decode back to 24 kHz audio
@@ -34,6 +40,8 @@ with torch.no_grad():
     wav = mimi.decode(codes.unsqueeze(0).cuda()).audio_values[0].cpu()
 ```
 
+---
+
 ## Reproducing the extraction
 
 ```bash
@@ -41,53 +49,130 @@ git clone https://github.com/shangeth/wren-datasets
 cd wren-datasets
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-huggingface-cli login
 
 export HF_TOKEN=hf_...
-
-# LJSpeech — downloads ~2.6 GB, ~30 min GPU
-python ljspeech.py --repo_id shangeth/ljspeech-mimi-codes --private
-
-# LibriSpeech — choose splits. See --help for flags.
-python librispeech.py --splits dev-clean,test-clean --private
-python librispeech.py --splits train-clean-100,train-clean-360 --private
-python librispeech.py --splits train-other-500 --cleanup_audio --private   # ~30 GB download
 ```
 
-Both scripts are idempotent: already-cached `.pt` codes are skipped, and LibriSpeech
-pushes per-split (so other splits already on the Hub stay untouched).
+### LJSpeech  (~13k rows, ~30 min GPU)
 
-Common flags:
+```bash
+python ljspeech.py --repo_id shangeth/ljspeech-mimi-codes --private
+```
+
+**Splits:** `train`
+
+---
+
+### LibriSpeech  (~280k rows total, ~6h GPU)
+
+```bash
+python librispeech.py \
+  --splits train-clean-100,train-clean-360,train-other-500,dev-clean,dev-other,test-clean,test-other \
+  --repo_id shangeth/librispeech-mimi-codes --private
+```
+
+**Splits (HF names):** `train_clean_100`, `train_clean_360`, `train_other_500`, `dev_clean`, `dev_other`, `test_clean`, `test_other`
+
+> `train-other-500` is ~30 GB — use `--cleanup_audio` to delete `.flac` after encoding:
+> ```bash
+> python librispeech.py --splits train-other-500 --cleanup_audio --repo_id shangeth/librispeech-mimi-codes --private
+> ```
+
+---
+
+### LibriTTS-R  (~360k rows total, ~8h GPU)
+
+Streams audio directly from HuggingFace — no manual download needed.
+
+```bash
+python libritts_r.py \
+  --source_hf_dataset mythicinfinity/libritts_r \
+  --hf_config all \
+  --splits dev.clean,dev.other,test.clean,test.other,train.clean.100,train.clean.360,train.other.500 \
+  --repo_id shangeth/libritts-r-mimi-codes --private
+```
+
+**Splits (HF names):** `dev_clean`, `dev_other`, `test_clean`, `test_other`, `train_clean_100`, `train_clean_360`, `train_other_500`
+
+> For large train splits, run separately with `--cleanup_audio` if disk is tight.
+
+---
+
+### HiFi-TTS  (~290k rows total, ~6h GPU)
+
+```bash
+python hifi_tts.py \
+  --splits train.clean,train.other,dev.clean,dev.other,test.clean,test.other \
+  --repo_id shangeth/hifi-tts-mimi-codes --private
+```
+
+**Splits (HF names):** `train_clean`, `train_other`, `dev_clean`, `dev_other`, `test_clean`, `test_other`
+
+---
+
+### VCTK  (~44k rows, mic1 only, ~1h GPU)
+
+```bash
+python vctk.py --repo_id shangeth/vctk-mimi-codes --private
+```
+
+**Splits:** `train`  
+Mic2 duplicates are automatically skipped (filtered by `_mic1` suffix in filename).
+
+---
+
+### Jenny TTS  (~21k rows, ~30 min GPU)
+
+```bash
+python jenny.py --repo_id shangeth/jenny-mimi-codes --private
+```
+
+**Splits:** `train`
+
+---
+
+## Common flags
 
 | Flag | Effect |
 |---|---|
-| `--skip_extract` | Skip download + Mimi encoding (codes must already be in `--cache_dir`) |
+| `--skip_extract` | Skip download + Mimi encoding (codes already in `--cache_dir`) |
 | `--skip_push` | Extract only, don't upload |
-| `--local_dir DIR` | Save Arrow dataset locally; skip upload (dry run) |
-| `--cleanup_audio` | (LibriSpeech) delete `.flac` + tar after each split is extracted |
+| `--cleanup_audio` | Delete audio files after encoding each split (saves disk) |
 | `--k_codebooks N` | Number of Mimi codebooks to extract (default 8) |
 | `--private` | Create/update the HF repo as private |
 
+All scripts are **idempotent** — already-cached `.pt` files are skipped on re-run.
+LibriSpeech and LibriTTS-R push per-split so existing splits on the Hub stay untouched.
+
+---
+
 ## Design notes
 
-- **Why int16?** Mimi's codebook_size is 2048 → fits trivially in `int16` (max 32767), halves storage vs `int32`.
-- **Why all 8 codebooks?** Users can slice `codes[:k]` for smaller/faster models, but can't magically add codebooks back if we only publish 3. Publishing the full tensor is strictly more useful.
-- **Why publish codes instead of audio?** The raw corpora are already on HF (`openslr/librispeech_asr`, `keithito/lj_speech`). Re-hosting audio is redundant; the novel (expensive-to-produce) artifact is the Mimi codes.
-- **LJSpeech casing preserved, LibriSpeech lowercased.** LJSpeech's `metadata.csv` is already mixed-case; LibriSpeech's `.trans.txt` is ALL UPPER. We lowercase the latter since uppercase in ASR corpora is a transcription convention, not a stylistic choice.
-- **Per-split `push_to_hub(split=X)`** (LibriSpeech) rather than `DatasetDict.push_to_hub` — lets you add new splits incrementally without clobbering existing ones on the Hub.
-- **Split names are underscored.** HF disallows hyphens in split names (clash with shard filename pattern), so `train-clean-100` on disk becomes `train_clean_100` on the Hub.
+- **int16:** Mimi codebook_size is 2048 → fits in int16, halves storage vs int32.
+- **All 8 codebooks:** Users slice `codes[:k]` for fewer; can't reconstruct extra codebooks later.
+- **Codes not audio:** Raw corpora are already on HF. The novel artifact is the Mimi codes.
+- **Casing:** All datasets preserve text casing as-is from their source (LJSpeech mixed-case, LibriSpeech pre-lowercased, LibriTTS-R/HiFi-TTS/VCTK/Jenny naturally cased).
+- **Split names underscored:** HF disallows hyphens in split names → `train-clean-100` becomes `train_clean_100`.
 
 ## Repository layout
 
 ```
 .
 ├── mimi.py              MimiCodec wrapper + int16 conversion helper
-├── ljspeech.py          Download + extract + push LJSpeech
-├── librispeech.py       Download + extract + push LibriSpeech (per split)
+├── ljspeech.py          LJSpeech — download + extract + push
+├── librispeech.py       LibriSpeech — download + extract + push (per split)
+├── libritts_r.py        LibriTTS-R — stream from HF + encode + push (per split)
+├── hifi_tts.py          HiFi-TTS — stream from HF + encode + push (per split)
+├── vctk.py              VCTK — stream from HF + encode + push (mic1 only)
+├── jenny.py             Jenny TTS — stream from HF + encode + push
 ├── data_stats.py        Quick stats over a local cache
-└── cards/
-    ├── ljspeech.md      Uploaded as README.md to the LJSpeech dataset repo
-    └── librispeech.md   Uploaded as README.md to the LibriSpeech dataset repo
+└── cards/               Dataset cards (uploaded as README.md to each HF dataset repo)
+    ├── ljspeech.md
+    ├── librispeech.md
+    ├── libritts_r.md
+    ├── hifi_tts.md
+    ├── vctk.md
+    └── jenny.md
 ```
 
 ## Citation
@@ -101,7 +186,7 @@ Common flags:
 }
 ```
 
-Please also cite the upstream corpora (LJSpeech, LibriSpeech) per their respective licenses.
+Please also cite the upstream corpus for whichever datasets you use (see each dataset card for the relevant BibTeX).
 
 ## Related
 
@@ -109,6 +194,5 @@ Please also cite the upstream corpora (LJSpeech, LibriSpeech) per their respecti
 
 ## License
 
-Apache-2.0 (tooling). See [LICENSE](LICENSE). The *published datasets* inherit the
-license of their upstream corpus (CC0 for LJSpeech, CC-BY-4.0 for LibriSpeech) —
-see each dataset card on the Hub.
+Apache-2.0 (tooling). Published datasets inherit their upstream corpus license —
+see each dataset card on the Hub for details.
