@@ -1,0 +1,6 @@
+torch>=2.1
+torchaudio>=2.1
+transformers>=4.45         # for MimiModel
+huggingface_hub>=0.25
+datasets>=3.0
+tqdm
