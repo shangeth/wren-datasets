@@ -17,6 +17,7 @@ models who doesn't want to burn GPU hours re-extracting codes.
 | [shangeth/hifi-tts-mimi-codes](https://huggingface.co/datasets/shangeth/hifi-tts-mimi-codes) | HiFi-TTS | ~290k | 6 splits | CC-BY-4.0 |
 | [shangeth/vctk-mimi-codes](https://huggingface.co/datasets/shangeth/vctk-mimi-codes) | VCTK | ~44k | `train` | CC-BY-4.0 |
 | [shangeth/jenny-mimi-codes](https://huggingface.co/datasets/shangeth/jenny-mimi-codes) | Jenny TTS | ~21k | `train` | Apache-2.0 |
+| [shangeth/expresso-mimi-codes](https://huggingface.co/datasets/shangeth/expresso-mimi-codes) | Expresso (conversational) | ~40k | `train` | **CC-BY-NC-4.0** |
 
 Each row: `id`, `text`, `codes` (`int16[k=8][n_frames]` @ 12.5 fps), `n_frames`,
 `k_codebooks`. Speaker datasets also include `speaker_id`. VCTK also includes `accent`.
@@ -131,6 +132,20 @@ python jenny.py --repo_id shangeth/jenny-mimi-codes --private
 
 ---
 
+### Expresso  (~40k rows, ~45 min GPU) ⚠️ CC-BY-NC-4.0
+
+4 speakers × 26 expressive styles in conversational pairs. The `style`,
+`other_speaker_id`, and `other_style` columns are preserved — key for disentanglement
+research.
+
+```bash
+python expresso.py --repo_id shangeth/expresso-mimi-codes --private
+```
+
+**Splits:** `train`
+
+---
+
 ## Common flags
 
 | Flag | Effect |
@@ -165,6 +180,7 @@ LibriSpeech and LibriTTS-R push per-split so existing splits on the Hub stay unt
 ├── hifi_tts.py          HiFi-TTS — stream from HF + encode + push (per split)
 ├── vctk.py              VCTK — stream from HF + encode + push (mic1 only)
 ├── jenny.py             Jenny TTS — stream from HF + encode + push
+├── expresso.py          Expresso conversational — stream from HF + encode + push
 ├── data_stats.py        Quick stats over a local cache
 └── cards/               Dataset cards (uploaded as README.md to each HF dataset repo)
     ├── ljspeech.md
@@ -172,7 +188,8 @@ LibriSpeech and LibriTTS-R push per-split so existing splits on the Hub stay unt
     ├── libritts_r.md
     ├── hifi_tts.md
     ├── vctk.md
-    └── jenny.md
+    ├── jenny.md
+    └── expresso.md
 ```
 
 ## Citation
