@@ -110,21 +110,22 @@ both the original corpus and this dataset when redistributing.
 ## Citations
 
 ```bibtex
+@misc{wren2026,
+  title  = {Wren: A Family of Small Open-Weight Models for Unified Speech-Text Modelling},
+  author = {Shangeth Rajaa},
+  year   = {2026},
+  url    = {https://github.com/shangeth/wren}
+}
+
 @inproceedings{panayotov2015librispeech,
   title     = {Librispeech: an ASR corpus based on public domain audio books},
   author    = {Panayotov, Vassil and Chen, Guoguo and Povey, Daniel and Khudanpur, Sanjeev},
   booktitle = {ICASSP},
   year      = {2015}
 }
-
-@article{defossez2024moshi,
-  title   = {Moshi: a speech-text foundation model for real-time dialogue},
-  author  = {D{\'e}fossez, Alexandre and others},
-  year    = {2024}
-}
 ```
 
 ## Related
 
 Used to train the [Wren](https://huggingface.co/shangeth/Wren-TTS-360M-v1) series of
-small speech LLMs.
+speech-text multimodal models.

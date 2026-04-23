@@ -93,21 +93,22 @@ citing the original corpus is encouraged.
 ## Citation
 
 ```bibtex
+@misc{wren2026,
+  title  = {Wren: A Family of Small Open-Weight Models for Unified Speech-Text Modelling},
+  author = {Shangeth Rajaa},
+  year   = {2026},
+  url    = {https://github.com/shangeth/wren}
+}
+
 @misc{ito2017lj,
   title  = {The LJ Speech Dataset},
   author = {Keith Ito and Linda Johnson},
   year   = {2017},
   url    = {https://keithito.com/LJ-Speech-Dataset/}
 }
-
-@article{defossez2024moshi,
-  title   = {Moshi: a speech-text foundation model for real-time dialogue},
-  author  = {D{\'e}fossez, Alexandre and others},
-  year    = {2024}
-}
 ```
 
 ## Related
 
 Used to train the [Wren](https://huggingface.co/shangeth/Wren-TTS-360M-v1) series of
-small speech LLMs.
+speech-text multimodal models.
