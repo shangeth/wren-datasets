@@ -19,6 +19,7 @@ Usage:
 
 import argparse
 import logging
+import re
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -54,8 +55,9 @@ def _utt_id(ex: dict) -> str:
 
 
 def _speaker_int(ex: dict) -> int:
-    sid = ex.get("speaker_id", "p0")
-    return int(str(sid).lstrip("p"))        # "p225" → 225
+    sid = str(ex.get("speaker_id", "p0"))
+    digits = re.sub(r"\D", "", sid)          # "p225" → 225, "s5" → 5
+    return int(digits) if digits else 0
 
 
 def _hf_size(source: str, token: Optional[str]) -> Optional[int]:
