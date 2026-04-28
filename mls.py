@@ -320,11 +320,14 @@ def _build_configs_block(api, repo_id: str) -> Optional[str]:
 
     # Merged "all" config — globs across language directories. No extra files;
     # same parquets are served under both per-language and "all" configs.
+    # Marked default so load_dataset(repo, split=...) without a config name
+    # picks the merged set.
     if len(configs) >= 2:
         all_splits: set[str] = set()
         for v in configs.values():
             all_splits |= v
         lines.append("- config_name: all")
+        lines.append("  default: true")
         lines.append("  data_files:")
         for split in sorted(all_splits, key=lambda s: (order.get(s, 999), s)):
             lines.append(f"  - split: {split}")
