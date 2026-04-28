@@ -18,6 +18,7 @@ models who doesn't want to burn GPU hours re-extracting codes.
 | [shangeth/vctk-mimi-codes](https://huggingface.co/datasets/shangeth/vctk-mimi-codes) | VCTK | ~44k | `train` | CC-BY-4.0 |
 | [shangeth/jenny-mimi-codes](https://huggingface.co/datasets/shangeth/jenny-mimi-codes) | Jenny TTS | ~21k | `train` | Apache-2.0 |
 | [shangeth/expresso-mimi-codes](https://huggingface.co/datasets/shangeth/expresso-mimi-codes) | Expresso (conversational) | ~40k | `train` | **CC-BY-NC-4.0** |
+| [shangeth/mls-mimi-codes](https://huggingface.co/datasets/shangeth/mls-mimi-codes) | Multilingual LibriSpeech | ~6M | 7 langs × 5 splits | CC-BY-4.0 |
 
 Each row: `id`, `text`, `codes` (`int16[k=8][n_frames]` @ 12.5 fps), `n_frames`,
 `k_codebooks`. Speaker datasets also include `speaker_id`. VCTK also includes `accent`.
@@ -132,6 +133,40 @@ python jenny.py --repo_id shangeth/jenny-mimi-codes --private
 
 ---
 
+### Multilingual LibriSpeech (MLS)  (7 languages × 5 splits, very large)
+
+7 non-English languages (English is in [librispeech-mimi-codes](https://huggingface.co/datasets/shangeth/librispeech-mimi-codes)).
+Each language is a separate HF dataset *config* with splits
+`train`, `dev`, `test`, `9_hours`, `1_hours`.
+
+Disk-tight: streams audio from HF, processes one (language, split) at a time.
+Use `--cleanup_cache` to drop `.pt` files after each split is pushed.
+
+```bash
+# Everything (7 langs × 5 splits) — drops cache after each push:
+python mls.py --cleanup_cache --repo_id shangeth/mls-mimi-codes --private
+
+# One language, just dev/test:
+python mls.py \
+  --languages dutch \
+  --splits dev,test \
+  --repo_id shangeth/mls-mimi-codes --private
+
+# One language, just train, with cleanup:
+python mls.py \
+  --languages german --splits train --cleanup_cache \
+  --repo_id shangeth/mls-mimi-codes --private
+```
+
+**Languages:** `dutch`, `french`, `german`, `italian`, `polish`, `portuguese`, `spanish`
+**Splits (HF names):** `train`, `dev`, `test`, `9_hours`, `1_hours`
+
+```python
+ds = load_dataset("shangeth/mls-mimi-codes", "german", split="dev")
+```
+
+---
+
 ### Expresso  (~40k rows, ~45 min GPU) ⚠️ CC-BY-NC-4.0
 
 4 speakers × 26 expressive styles in conversational pairs. The `style`,
@@ -181,6 +216,7 @@ LibriSpeech and LibriTTS-R push per-split so existing splits on the Hub stay unt
 ├── vctk.py              VCTK — stream from HF + encode + push (mic1 only)
 ├── jenny.py             Jenny TTS — stream from HF + encode + push
 ├── expresso.py          Expresso conversational — stream from HF + encode + push
+├── mls.py               Multilingual LibriSpeech — stream from HF + encode + push (per lang × split)
 ├── data_stats.py        Quick stats over a local cache
 └── cards/               Dataset cards (uploaded as README.md to each HF dataset repo)
     ├── ljspeech.md
@@ -189,7 +225,8 @@ LibriSpeech and LibriTTS-R push per-split so existing splits on the Hub stay unt
     ├── hifi_tts.md
     ├── vctk.md
     ├── jenny.md
-    └── expresso.md
+    ├── expresso.md
+    └── mls.md
 ```
 
 ## Citation
