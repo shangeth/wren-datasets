@@ -53,6 +53,12 @@ codes = torch.tensor(ex["codes"], dtype=torch.long)  # [8, n_frames]
 print(ex["text"])
 ```
 
+## Links
+
+- **Dataset extraction code:** [github.com/shangeth/wren-datasets](https://github.com/shangeth/wren-datasets)
+- **Wren research project:** [github.com/shangeth/wren](https://github.com/shangeth/wren)
+- **TTS models trained on these codes:** [github.com/shangeth/wren-tts](https://github.com/shangeth/wren-tts)
+
 ## Citation
 
 ```bibtex

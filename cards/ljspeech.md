@@ -90,6 +90,12 @@ The underlying LJSpeech corpus is in the **public domain (CC0)**. The derived Mi
 inherit this license. You can use, redistribute, and modify without attribution, though
 citing the original corpus is encouraged.
 
+## Links
+
+- **Dataset extraction code:** [github.com/shangeth/wren-datasets](https://github.com/shangeth/wren-datasets)
+- **Wren research project:** [github.com/shangeth/wren](https://github.com/shangeth/wren)
+- **TTS models trained on these codes:** [github.com/shangeth/wren-tts](https://github.com/shangeth/wren-tts)
+
 ## Citation
 
 ```bibtex

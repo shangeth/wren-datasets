@@ -112,6 +112,12 @@ with torch.no_grad():
     wav = mimi.decode(codes.unsqueeze(0).cuda()).audio_values[0].cpu()
 ```
 
+## Links
+
+- **Dataset extraction code:** [github.com/shangeth/wren-datasets](https://github.com/shangeth/wren-datasets)
+- **Wren research project:** [github.com/shangeth/wren](https://github.com/shangeth/wren)
+- **TTS models trained on these codes:** [github.com/shangeth/wren-tts](https://github.com/shangeth/wren-tts)
+
 ## Citation
 
 ```bibtex
