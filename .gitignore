@@ -40,3 +40,7 @@ secrets*
 .idea/
 *.swp
 .claude/
+
+# Expresso conversational pipeline caches
+conv_manifest.json
+conv_asr_cache.jsonl
