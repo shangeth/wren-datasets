@@ -14,10 +14,10 @@ models who doesn't want to burn GPU hours re-extracting codes.
 | [shangeth/ljspeech-mimi-codes](https://huggingface.co/datasets/shangeth/ljspeech-mimi-codes) | LJSpeech | ~13k | `train` | CC0 |
 | [shangeth/librispeech-mimi-codes](https://huggingface.co/datasets/shangeth/librispeech-mimi-codes) | LibriSpeech | ~280k | 7 splits | CC-BY-4.0 |
 | [shangeth/libritts-r-mimi-codes](https://huggingface.co/datasets/shangeth/libritts-r-mimi-codes) | LibriTTS-R | ~360k | 7 splits | CC-BY-4.0 |
-| [shangeth/hifi-tts-mimi-codes](https://huggingface.co/datasets/shangeth/hifi-tts-mimi-codes) | HiFi-TTS | ~290k | 6 splits | CC-BY-4.0 |
 | [shangeth/vctk-mimi-codes](https://huggingface.co/datasets/shangeth/vctk-mimi-codes) | VCTK | ~44k | `train` | CC-BY-4.0 |
 | [shangeth/jenny-mimi-codes](https://huggingface.co/datasets/shangeth/jenny-mimi-codes) | Jenny TTS | ~21k | `train` | Apache-2.0 |
-| [shangeth/expresso-mimi-codes](https://huggingface.co/datasets/shangeth/expresso-mimi-codes) | Expresso (conversational) | ~40k | `train` | **CC-BY-NC-4.0** |
+| [shangeth/expresso-mimi-codes](https://huggingface.co/datasets/shangeth/expresso-mimi-codes) | Expresso (read + conversational) | ~40k | `read`/`conversational` × 3 | **CC-BY-NC-4.0** |
+| [shangeth/expresso-mimi-codes-tagged](https://huggingface.co/datasets/shangeth/expresso-mimi-codes-tagged) | Expresso with 19 `<style>` tags prepended to text (fine-tune-ready, canonical schema) | ~24k | `train`/`dev`/`test` | **CC-BY-NC-4.0** |
 | [shangeth/mls-mimi-codes](https://huggingface.co/datasets/shangeth/mls-mimi-codes) | Multilingual LibriSpeech | ~6M | 7 langs × 5 splits | CC-BY-4.0 |
 
 Each row: `id`, `text`, `codes` (`int16[k=8][n_frames]` @ 12.5 fps), `n_frames`,
@@ -100,18 +100,6 @@ python libritts_r.py \
 
 ---
 
-### HiFi-TTS  (~290k rows total, ~6h GPU)
-
-```bash
-python hifi_tts.py \
-  --splits train.clean,train.other,dev.clean,dev.other,test.clean,test.other \
-  --repo_id shangeth/hifi-tts-mimi-codes --private
-```
-
-**Splits (HF names):** `train_clean`, `train_other`, `dev_clean`, `dev_other`, `test_clean`, `test_other`
-
----
-
 ### VCTK  (~44k rows, mic1 only, ~1h GPU)
 
 ```bash
@@ -169,15 +157,55 @@ ds = load_dataset("shangeth/mls-mimi-codes", "german", split="dev")
 
 ### Expresso  (~40k rows, ~45 min GPU) ⚠️ CC-BY-NC-4.0
 
-4 speakers × 26 expressive styles in conversational pairs. The `style`,
-`other_speaker_id`, and `other_style` columns are preserved — key for disentanglement
-research.
+4 speakers × 26 expressive styles, in two configs:
+
+- `read` — read-speech utterances (built from the official Expresso tar)
+- `conversational` — VAD-segmented dialogue turns, transcribed with Whisper-Turbo
+
+The `style`, `substyle`, `corpus`, `other_speaker_id`, and `other_style` columns are
+preserved across both configs — key for disentanglement research.
 
 ```bash
-python expresso.py --repo_id shangeth/expresso-mimi-codes --private
+# Raw audio + text (audio @ 48kHz mono):
+python expresso_audio.py           --repo_id shangeth/expresso         # read config
+python expresso_conversational.py  --repo_id shangeth/expresso         # conversational config
+
+# Mimi codes (read + conversational, 3 splits each):
+python expresso.py                 --repo_id shangeth/expresso-mimi-codes --private
 ```
 
-**Splits:** `train`
+**Splits:** `train`, `dev`, `test` (per config)
+
+---
+
+### Expresso-tagged  (derived; ~1 min CPU) ⚠️ CC-BY-NC-4.0
+
+Fine-tune-ready variant of `expresso-mimi-codes`. Prepends 19 `<style>` tags
+(`<happy>`, `<sad>`, `<whisper>`, …) to text, drops 5 styles unsuitable for TTS
+(`animal`, `animaldir`, `child`, `childdir`, `nonverbal`), concats the `read` +
+`conversational` configs, and strips to the canonical training schema
+(`id`, `text`, `speaker_id`, `codes`, `n_frames`, `k_codebooks`).
+
+Used to fine-tune
+[shangeth/Wren-TTS-0.5B-multi-expressive](https://huggingface.co/shangeth/Wren-TTS-0.5B-multi-expressive).
+
+```bash
+python expresso_tagged.py
+```
+
+**Splits:** `train`, `dev`, `test`
+
+---
+
+### ASR benchmark on Expresso-read  (utility, no push)
+
+Optional: benchmark ASR models on Expresso `read` per expressive style — used to pick
+the transcriber for `conversational`. Requires the `read` config to exist on the Hub.
+
+```bash
+python asr_benchmark.py --n_per_style 50           # whisper-large-v3-turbo + whisper-large-v3
+python asr_benchmark.py --include_parakeet         # +nvidia parakeet (needs nemo_toolkit[asr])
+```
 
 ---
 
@@ -208,24 +236,28 @@ LibriSpeech and LibriTTS-R push per-split so existing splits on the Hub stay unt
 
 ```
 .
-├── mimi.py              MimiCodec wrapper + int16 conversion helper
-├── ljspeech.py          LJSpeech — download + extract + push
-├── librispeech.py       LibriSpeech — download + extract + push (per split)
-├── libritts_r.py        LibriTTS-R — stream from HF + encode + push (per split)
-├── hifi_tts.py          HiFi-TTS — stream from HF + encode + push (per split)
-├── vctk.py              VCTK — stream from HF + encode + push (mic1 only)
-├── jenny.py             Jenny TTS — stream from HF + encode + push
-├── expresso.py          Expresso conversational — stream from HF + encode + push
-├── mls.py               Multilingual LibriSpeech — stream from HF + encode + push (per lang × split)
-├── data_stats.py        Quick stats over a local cache
-└── cards/               Dataset cards (uploaded as README.md to each HF dataset repo)
+├── mimi.py                    MimiCodec wrapper + int16 conversion helper
+├── ljspeech.py                LJSpeech — download + extract + push
+├── librispeech.py             LibriSpeech — download + extract + push (per split)
+├── libritts_r.py              LibriTTS-R — stream from HF + encode + push (per split)
+├── vctk.py                    VCTK — stream from HF + encode + push (mic1 only)
+├── jenny.py                   Jenny TTS — stream from HF + encode + push
+├── expresso.py                Expresso (both configs) — encode + push to *-mimi-codes
+├── expresso_audio.py          Build raw `read` config (audio + text) for shangeth/expresso
+├── expresso_conversational.py Build `conversational` config (VAD-segmented + Whisper-transcribed)
+├── expresso_tagged.py         Derive shangeth/expresso-mimi-codes-tagged (fine-tune-ready, 19 tags)
+├── asr_benchmark.py           Per-style WER benchmark on Expresso-read (utility, no push)
+├── mls.py                     Multilingual LibriSpeech — stream from HF + encode + push (per lang × split)
+├── data_stats.py              Quick stats over a local cache
+└── cards/                     Dataset cards (uploaded as README.md to each HF dataset repo)
     ├── ljspeech.md
     ├── librispeech.md
     ├── libritts_r.md
-    ├── hifi_tts.md
     ├── vctk.md
     ├── jenny.md
     ├── expresso.md
+    ├── expresso_audio.md
+    ├── expresso_tagged.md
     └── mls.md
 ```
 
